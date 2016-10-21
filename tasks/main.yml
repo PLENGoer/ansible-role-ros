@@ -3,13 +3,37 @@
   apt_key:
     url: "{{ ros_apt_key }}"
     state: present
+  become: yes
 
 - name: Add ROS repository
   apt_repository:
     repo: "deb {{ ros_apt_uri }} {{ ansible_lsb.codename }} main"
     state: present
+  become: yes
 
 - name: Install desired ROS package
   apt:
     pkg: "ros-{{ ros_release }}-{{ ros_package }}"
+    state: present
+  become: yes
+
+- name: Get status of rosdep source database
+  stat:
+    path: "/etc/ros/rosdep/sources.list.d"
+    get_md5: no
+    get_checksum: no
+  register: rosdep_database
+  become: yes
+
+- name: Initialize rosdep
+  command: /usr/bin/rosdep init
+  notify: rosdep update
+  when: not rosdep_database.stat.exists
+  become: yes
+
+- name: Include sourcing of ROS setup script in ~/.bashrc
+  blockinfile:
+    dest: "$HOME/.bashrc"
+    content: |
+      source /opt/ros/{{ ros_release }}/setup.bash
     state: present
