@@ -12,7 +12,7 @@
 - name: Desired ROS configuration
   apt:
     pkg: "ros-{{ ros_release }}-{{ ros_package }}"
-    state: present
+    state: "{{ ros_installation_type }}"
 
 - name: Check status of rosdep source database
   stat:
@@ -23,12 +23,13 @@
 
 - name: Initialize rosdep database
   command: /usr/bin/rosdep init
-  notify: rosdep update
+  notify: "rosdep update"
   when: not rosdep_database.stat.exists
 
 - name: Sourcing of ROS setup script in ~/.bashrc
   blockinfile:
     dest: "$HOME/.bashrc"
+    marker: "# {mark} Sourcing ROS environment setup script"
     content: |
       source /opt/ros/{{ ros_release }}/setup.bash
     state: present
